@@ -1,6 +1,6 @@
-init: prod-nginx-link
-
 default: start
+
+init: prod-nginx-link
 
 ### PRODUCTION COMMANDS
 start:
