@@ -345,7 +345,7 @@ services:
     container_name: dify-ssrf-proxy
     volumes:
       # pls clearly modify the squid.conf file to fit your network environment.
-      - /opt/apps/persistence/dify/ssrf_proxy/squid.conf:/etc/squid/squid.conf
+      - ./squid.conf:/etc/squid/squid.conf
     networks:
       - ssrf_proxy_network
       - default
