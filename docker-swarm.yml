@@ -1,0 +1,168 @@
+version: '3.8'
+
+networks:
+  ssrf_proxy_network:
+    driver: overlay
+    internal: true
+  default:
+    driver: overlay
+
+services:
+  api:
+    image: langgenius/dify-api:0.11.0
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 60s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+    environment:
+      MODE: api
+      MIGRATION_ENABLED: 'true'
+    env_file: .env
+    volumes:
+      - /mnt/glusterfs/dify/app/api/storage:/app/api/storage
+    ports:
+      - "45001:5001"
+    networks:
+      - ssrf_proxy_network
+      - default
+
+  worker:
+    image: langgenius/dify-api:0.11.0
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 60s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+    env_file: .env
+    environment:
+      MODE: worker
+    volumes:
+      - /mnt/glusterfs/dify/app/api/storage:/app/api/storage
+    networks:
+      - ssrf_proxy_network
+      - default
+
+  web:
+    image: langgenius/dify-web:0.11.0
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: any
+    env_file: .env
+    ports:
+      - target: 3000
+        published: 43210
+        mode: host
+
+  sandbox:
+    image: langgenius/dify-sandbox:0.2.10
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: any
+    env_file: .env
+    environment:
+      API_KEY: ${SANDBOX_API_KEY:-dify-sandbox}
+      GIN_MODE: ${SANDBOX_GIN_MODE:-release}
+      WORKER_TIMEOUT: ${SANDBOX_WORKER_TIMEOUT:-15}
+      ENABLE_NETWORK: ${SANDBOX_ENABLE_NETWORK:-true}
+      HTTP_PROXY: ${SANDBOX_HTTP_PROXY:-http://ssrf_proxy:3128}
+      HTTPS_PROXY: ${SANDBOX_HTTPS_PROXY:-http://ssrf_proxy:3128}
+      SANDBOX_PORT: ${SANDBOX_PORT:-8194}
+    volumes:
+      - /mnt/glusterfs/dify/sandbox/dependencies:/dependencies
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8194/health']
+    networks:
+      - ssrf_proxy_network
+
+  ssrf_proxy:
+    image: ubuntu/squid:latest
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: any
+    volumes:
+      - ./ssrf_proxy/squid.conf.template:/etc/squid/squid.conf.template
+      - ./ssrf_proxy/docker-entrypoint.sh:/docker-entrypoint-mount.sh
+    entrypoint:
+      [
+        'sh',
+        '-c',
+        "cp /docker-entrypoint-mount.sh /docker-entrypoint.sh && sed -i 's/\r$$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh && /docker-entrypoint.sh",
+      ]
+    networks:
+      - ssrf_proxy_network
+      - default
+
+  ollama:
+    image: ollama/ollama:latest
+    networks:
+      - ssrf_proxy_network
+      - default
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: any
+    environment:
+      # - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+    ports:
+      - 11434:11434
+    volumes:
+      - /mnt/glusterfs/ollama:/root/.ollama

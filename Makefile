@@ -2,16 +2,25 @@ default: start
 
 init: prod-nginx-link
 
+
+
 ### PRODUCTION COMMANDS
-start:
-	docker compose --env-file .env --file ./docker-compose.yaml up -d
-rebuild:
-	docker compose --env-file .env --file ./docker-compose.yaml up -d --build
-restart:
-	docker compose --env-file .env --file ./docker-compose.yaml up -d --force-recreate	
-stop:
-	docker compose --env-file .env --file ./docker-compose.yaml down
+prod-release: prod-start
+
+STACK_NAME = dify
+SWARM_FILE = ./docker-swarm.yml
+
+prod-start:
+	docker stack deploy -c $(SWARM_FILE) $(STACK_NAME) --detach=true
+
+prod-update: prod-start
+
+prod-stop:
+	docker stack rm $(STACK_NAME) 
+
+prod-rm:
+	docker stack rm $(STACK_NAME)  
 
 prod-nginx-link:
-	ln -s ${shell pwd}/vhost.conf /etc/nginx/sites-enabled/dify.conf
+	ln -s ${shell pwd}/nginx/vhost.conf /etc/nginx/sites-enabled/dify.jsmx.org.conf
 	nginx -s reload
