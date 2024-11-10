@@ -24,7 +24,6 @@ services:
         order: stop-first
     environment:
       MODE: api
-      MIGRATION_ENABLED: 'true'
     env_file: .env
     volumes:
       - /mnt/glusterfs/dify/app/api/storage:/app/api/storage
@@ -75,9 +74,7 @@ services:
         condition: any
     env_file: .env
     ports:
-      - target: 3000
-        published: 43210
-        mode: host
+      - "43210:3000"
 
   sandbox:
     image: langgenius/dify-sandbox:0.2.10
