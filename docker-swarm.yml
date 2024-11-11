@@ -9,7 +9,7 @@ networks:
 
 services:
   api:
-    image: langgenius/dify-api:0.11.0
+    image: langgenius/dify-api:0.11.1
     deploy:
       replicas: 2
       update_config:
@@ -34,7 +34,7 @@ services:
       - default
 
   worker:
-    image: langgenius/dify-api:0.11.0
+    image: langgenius/dify-api:0.11.1
     deploy:
       replicas: 2
       update_config:
@@ -57,7 +57,7 @@ services:
       - default
 
   web:
-    image: langgenius/dify-web:0.11.0
+    image: langgenius/dify-web:0.11.1
     deploy:
       replicas: 2
       update_config:
