@@ -11,7 +11,7 @@ services:
   api:
     image: langgenius/dify-api:0.11.1
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 1
         delay: 60s
@@ -36,7 +36,7 @@ services:
   worker:
     image: langgenius/dify-api:0.11.1
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 1
         delay: 60s
@@ -79,7 +79,7 @@ services:
   sandbox:
     image: langgenius/dify-sandbox:0.2.10
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 1
         delay: 30s
@@ -150,7 +150,7 @@ services:
       - ssrf_proxy_network
       - default
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 1
         delay: 30s
